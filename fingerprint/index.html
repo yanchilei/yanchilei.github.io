@@ -5,8 +5,329 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width,initial-scale=1.0" />
     <title>Fingerprint</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
   </head>
-  <body>
-    test
+  <body style="word-wrap: break-word;">
+    <div>
+      <div style="border: 1px solid #ccc; padding: 8px">
+        <div>
+          <div>canvas image hash:</div>
+          <div id="canvas-image-hash"></div>
+        </div>
+        <hr />
+        <div>
+          <div>webgl image hash:</div>
+          <div id="webgl-image-hash"></div>
+        </div>
+        <hr />
+        <div>
+          <div>webgl parameters hash:</div>
+          <div id="webgl-parameters-hash"></div>
+        </div>
+      </div>
+
+
+      <div style="border: 1px solid #ccc; margin-top: 32px; color: green; padding: 8px">
+        <div>
+          <div>canvas image value:</div>
+          <div id="canvas-image-value"></div>
+        </div>
+        <hr />
+        <div>
+          webgl value:
+          <div id="webgl-value"></div>
+        </div>
+      </div>
+    </div>
+    <script>
+      function stringCut(str) {
+        if (str.length <= 10) return str;
+        return str.slice(0, 10) + '......' + str.slice(str.length - 10);
+      }
+
+      function getCanvasFingerprint() {
+        // 创建一个隐藏的Canvas元素
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        if(!ctx) {
+          return;
+        }
+        canvas.width = 200;
+        canvas.height = 50;
+        var txt = "BrowserLeaks,com <canvas> 1.0";
+        ctx.textBaseline = "top";
+        ctx.font = "14px 'Arial'";
+        ctx.textBaseline = "alphabetic";
+        ctx.fillStyle = "#f60";
+        ctx.fillRect(125,1,62,20);
+        ctx.fillStyle = "#069";
+        ctx.fillText(txt, 2, 15);
+        ctx.fillStyle = "rgba(102, 204, 0, 0.7)";
+        ctx.fillText(txt, 4, 17);
+        const imagesData = canvas.toDataURL();
+        canvas.remove();
+
+        // const hash = crypto.createHash('md5').update(imagesData).digest('hex');
+        const hash = CryptoJS.MD5(imagesData).toString();
+        return {imagesData, hash};
+      }
+
+      function getGLDrawHash(){
+  var e;
+  try {
+    var t = document.createElement("canvas");
+    t.width = 256,
+    t.height = 128,
+    e = t.getContext("webgl2", {
+        preserveDrawingBuffer: !0
+    }) || t.getContext("experimental-webgl2", {
+        preserveDrawingBuffer: !0
+    }) || t.getContext("webgl", {
+        preserveDrawingBuffer: !0
+    }) || t.getContext("experimental-webgl", {
+        preserveDrawingBuffer: !0
+    }) || t.getContext("moz-webgl", {
+        preserveDrawingBuffer: !0
+    });
+  } catch (e) {}
+  try {
+    var a = e.createBuffer()
+        , n = (e.bindBuffer(e.ARRAY_BUFFER, a),
+        new Float32Array([-.2, -.9, 0, .4, -.26, 0, 0, .7321, 0]))
+        , i = (e.bufferData(e.ARRAY_BUFFER, n, e.STATIC_DRAW),
+        a.itemSize = 3,
+        a.numItems = 3,
+        e.createProgram())
+        , o = e.createShader(e.VERTEX_SHADER)
+        , s = (e.shaderSource(o, "attribute vec2 attrVertex;varying vec2 varyinTexCoordinate;uniform vec2 uniformOffset;void main(){varyinTexCoordinate=attrVertex+uniformOffset;gl_Position=vec4(attrVertex,0,1);}"),
+        e.compileShader(o),
+        e.createShader(e.FRAGMENT_SHADER));
+    e.shaderSource(s, "precision mediump float;varying vec2 varyinTexCoordinate;void main() {gl_FragColor=vec4(varyinTexCoordinate,0,1);}"),
+        e.compileShader(s),
+        e.attachShader(i, o),
+        e.attachShader(i, s),
+        e.linkProgram(i),
+        e.useProgram(i),
+        i.vertexPosAttrib = e.getAttribLocation(i, "attrVertex"),
+        i.offsetUniform = e.getUniformLocation(i, "uniformOffset"),
+        e.enableVertexAttribArray(i.vertexPosArray),
+        e.vertexAttribPointer(i.vertexPosAttrib, a.itemSize, e.FLOAT, !1, 0, 0),
+        e.uniform2f(i.offsetUniform, 1, 1),
+        e.drawArrays(e.TRIANGLE_STRIP, 0, a.numItems);
+  } catch (e) {
+      console.log(e)
+      return ''
+  }
+  let r = "";
+  try {
+      var _ = new Uint8Array(131072);
+      if (e.readPixels(0, 0, 256, 128, e.RGBA, e.UNSIGNED_BYTE, _),
+      "" == (r = JSON.stringify(_).replace(/,?"[0-9]+":/g, "")).replace(/^{[0]+}$/g, ""))
+          throw 1;
+      r = hash(r);
+  } catch (e) {
+      r = "n/a"
+  }
+  const res = getParameters(e);
+  return {
+    parameters: res?.parameters,
+    r,
+    hash: res?.hash,
+  }
+}
+
+let I64BIT_TABLE =
+'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-'.split('');
+
+function hash(input){
+  var hash = 5381;
+  var i = input.length - 1;
+
+  if(typeof input == 'string'){
+    for (; i > -1; i--)
+        hash += (hash << 5) + input.charCodeAt(i);
+  }
+  else{
+    for (; i > -1; i--)
+        hash += (hash << 5) + input[i];
+  }
+  var value = hash & 0x7FFFFFFF;
+
+  var retValue = '';
+  do{
+    retValue += I64BIT_TABLE[value & 0x3F];
+  }
+  while(value >>= 6);
+
+  return retValue;
+}
+
+function getParameters(gl) {
+if (!gl) {
+    console.error('WebGL2 not supported');
+} else {
+    var parameters = {
+        'ACTIVE_TEXTURE': gl.getParameter(gl.ACTIVE_TEXTURE),
+        'ALIASED_LINE_WIDTH_RANGE': gl.getParameter(gl.ALIASED_LINE_WIDTH_RANGE),
+        'ALIASED_POINT_SIZE_RANGE': gl.getParameter(gl.ALIASED_POINT_SIZE_RANGE),
+        'ALPHA_BITS': gl.getParameter(gl.ALPHA_BITS),
+        'BLEND': gl.getParameter(gl.BLEND),
+        'BLEND_COLOR': gl.getParameter(gl.BLEND_COLOR),
+        'BLEND_DST_ALPHA': gl.getParameter(gl.BLEND_DST_ALPHA),
+        'BLEND_DST_RGB': gl.getParameter(gl.BLEND_DST_RGB),
+        'BLEND_EQUATION_ALPHA': gl.getParameter(gl.BLEND_EQUATION_ALPHA),
+        'BLEND_EQUATION_RGB': gl.getParameter(gl.BLEND_EQUATION_RGB),
+        'BLEND_SRC_ALPHA': gl.getParameter(gl.BLEND_SRC_ALPHA),
+        'BLEND_SRC_RGB': gl.getParameter(gl.BLEND_SRC_RGB),
+        'BLUE_BITS': gl.getParameter(gl.BLUE_BITS),
+        'CLAMP_TO_EDGE': gl.getParameter(gl.CLAMP_TO_EDGE),
+        'COLOR_CLEAR_VALUE': gl.getParameter(gl.COLOR_CLEAR_VALUE),
+        'COLOR_WRITEMASK': gl.getParameter(gl.COLOR_WRITEMASK),
+        'COMPRESSED_TEXTURE_FORMATS': gl.getParameter(gl.COMPRESSED_TEXTURE_FORMATS),
+        'CULL_FACE': gl.getParameter(gl.CULL_FACE),
+        'CULL_FACE_MODE': gl.getParameter(gl.CULL_FACE_MODE),
+        'CURRENT_PROGRAM': gl.getParameter(gl.CURRENT_PROGRAM),
+        'DEPTH_BITS': gl.getParameter(gl.DEPTH_BITS),
+        'DEPTH_CLEAR_VALUE': gl.getParameter(gl.DEPTH_CLEAR_VALUE),
+        'DEPTH_FUNC': gl.getParameter(gl.DEPTH_FUNC),
+        'DEPTH_RANGE': gl.getParameter(gl.DEPTH_RANGE),
+        'DEPTH_TEST': gl.getParameter(gl.DEPTH_TEST),
+        'DEPTH_WRITEMASK': gl.getParameter(gl.DEPTH_WRITEMASK),
+        'DITHER': gl.getParameter(gl.DITHER),
+        'ELEMENT_ARRAY_BUFFER_BINDING': gl.getParameter(gl.ELEMENT_ARRAY_BUFFER_BINDING),
+        'FRAMEBUFFER_BINDING': gl.getParameter(gl.FRAMEBUFFER_BINDING),
+        'FRONT_FACE': gl.getParameter(gl.FRONT_FACE),
+        'GENERATE_MIPMAP_HINT': gl.getParameter(gl.GENERATE_MIPMAP_HINT),
+        'GREEN_BITS': gl.getParameter(gl.GREEN_BITS),
+        'IMPLEMENTATION_COLOR_READ_FORMAT': gl.getParameter(gl.IMPLEMENTATION_COLOR_READ_FORMAT),
+        'IMPLEMENTATION_COLOR_READ_TYPE': gl.getParameter(gl.IMPLEMENTATION_COLOR_READ_TYPE),
+        'LINE_WIDTH': gl.getParameter(gl.LINE_WIDTH),
+        'MAX_3D_TEXTURE_SIZE': gl.getParameter(gl.MAX_3D_TEXTURE_SIZE),
+        'MAX_ARRAY_TEXTURE_LAYERS': gl.getParameter(gl.MAX_ARRAY_TEXTURE_LAYERS),
+        'MAX_CLIENT_WAIT_TIMEOUT_WEBGL': gl.getParameter(gl.MAX_CLIENT_WAIT_TIMEOUT_WEBGL),
+        'MAX_COLOR_ATTACHMENTS': gl.getParameter(gl.MAX_COLOR_ATTACHMENTS),
+        'MAX_COMBINED_FRAGMENT_UNIFORM_COMPONENTS': gl.getParameter(gl.MAX_COMBINED_FRAGMENT_UNIFORM_COMPONENTS),
+        'MAX_COMBINED_UNIFORM_BLOCKS': gl.getParameter(gl.MAX_COMBINED_UNIFORM_BLOCKS),
+        'MAX_COMBINED_VERTEX_UNIFORM_COMPONENTS': gl.getParameter(gl.MAX_COMBINED_VERTEX_UNIFORM_COMPONENTS),
+        'MAX_CUBE_MAP_TEXTURE_SIZE': gl.getParameter(gl.MAX_CUBE_MAP_TEXTURE_SIZE),
+        'MAX_DRAW_BUFFERS': gl.getParameter(gl.MAX_DRAW_BUFFERS),
+        'MAX_ELEMENTS_INDICES': gl.getParameter(gl.MAX_ELEMENTS_INDICES),
+        'MAX_ELEMENTS_VERTICES': gl.getParameter(gl.MAX_ELEMENTS_VERTICES),
+        'MAX_ELEMENT_INDEX': gl.getParameter(gl.MAX_ELEMENT_INDEX),
+        'MAX_FRAGMENT_INPUT_COMPONENTS': gl.getParameter(gl.MAX_FRAGMENT_INPUT_COMPONENTS),
+        'MAX_FRAGMENT_UNIFORM_COMPONENTS': gl.getParameter(gl.MAX_FRAGMENT_UNIFORM_COMPONENTS),
+        'MAX_FRAGMENT_UNIFORM_VECTORS': gl.getParameter(gl.MAX_FRAGMENT_UNIFORM_VECTORS),
+        'MAX_FRAGMENT_UNIFORM_BLOCKS': gl.getParameter(gl.MAX_FRAGMENT_UNIFORM_BLOCKS),
+        'MAX_FRAMEBUFFER_WIDTH': gl.getParameter(gl.MAX_FRAMEBUFFER_WIDTH),
+        'MAX_FRAMEBUFFER_HEIGHT': gl.getParameter(gl.MAX_FRAMEBUFFER_HEIGHT),
+        'MAX_FRAMEBUFFER_SAMPLES': gl.getParameter(gl.MAX_FRAMEBUFFER_SAMPLES),
+        'MAX_RENDERBUFFER_SIZE': gl.getParameter(gl.MAX_RENDERBUFFER_SIZE),
+        'MAX_SAMPLE_MASK_WORDS': gl.getParameter(gl.MAX_SAMPLE_MASK_WORDS),
+        'MAX_SAMPLES': gl.getParameter(gl.MAX_SAMPLES),
+        'MAX_SERVER_WAIT_TIMEOUT': gl.getParameter(gl.MAX_SERVER_WAIT_TIMEOUT),
+        'MAX_TEXTURE_IMAGE_UNITS': gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS),
+        'MAX_TEXTURE_LOD_BIAS': gl.getParameter(gl.MAX_TEXTURE_LOD_BIAS),
+        'MAX_TRANSFORM_FEEDBACK_INTERLEAVED_COMPONENTS': gl.getParameter(gl.MAX_TRANSFORM_FEEDBACK_INTERLEAVED_COMPONENTS),
+        'MAX_TRANSFORM_FEEDBACK_SEPARATE_ATTRIBS': gl.getParameter(gl.MAX_TRANSFORM_FEEDBACK_SEPARATE_ATTRIBS),
+        'MAX_TRANSFORM_FEEDBACK_SEPARATE_COMPONENTS': gl.getParameter(gl.MAX_TRANSFORM_FEEDBACK_SEPARATE_COMPONENTS),
+        'MAX_UNIFORM_BLOCK_SIZE': gl.getParameter(gl.MAX_UNIFORM_BLOCK_SIZE),
+        'MAX_UNIFORM_BUFFER_BINDINGS': gl.getParameter(gl.MAX_UNIFORM_BUFFER_BINDINGS),
+        'MAX_VARYING_COMPONENTS': gl.getParameter(gl.MAX_VARYING_COMPONENTS),
+        'MAX_VERTEX_ATTRIBS': gl.getParameter(gl.MAX_VERTEX_ATTRIBS),
+        'MAX_VERTEX_OUTPUT_COMPONENTS': gl.getParameter(gl.MAX_VERTEX_OUTPUT_COMPONENTS),
+        'MAX_VERTEX_UNIFORM_BLOCKS': gl.getParameter(gl.MAX_VERTEX_UNIFORM_BLOCKS),
+        'MAX_VERTEX_UNIFORM_COMPONENTS': gl.getParameter(gl.MAX_VERTEX_UNIFORM_COMPONENTS),
+        'MIN_PROGRAM_TEXEL_OFFSET': gl.getParameter(gl.MIN_PROGRAM_TEXEL_OFFSET),
+        'MAX_PROGRAM_TEXEL_OFFSET': gl.getParameter(gl.MAX_PROGRAM_TEXEL_OFFSET),
+        'PACK_ALIGNMENT': gl.getParameter(gl.PACK_ALIGNMENT),
+        'PACK_ROW_LENGTH': gl.getParameter(gl.PACK_ROW_LENGTH),
+        'PACK_SKIP_PIXELS': gl.getParameter(gl.PACK_SKIP_PIXELS),
+        'PACK_SKIP_ROWS': gl.getParameter(gl.PACK_SKIP_ROWS),
+        'PIXEL_PACK_BUFFER_BINDING': gl.getParameter(gl.PIXEL_PACK_BUFFER_BINDING),
+        'PIXEL_UNPACK_BUFFER_BINDING': gl.getParameter(gl.PIXEL_UNPACK_BUFFER_BINDING),
+        'RED_BITS': gl.getParameter(gl.RED_BITS),
+        'RENDERBUFFER_BINDING': gl.getParameter(gl.RENDERBUFFER_BINDING),
+        'RENDERER': gl.getParameter(gl.RENDERER),
+        'SAMPLE_BUFFERS': gl.getParameter(gl.SAMPLE_BUFFERS),
+        'SAMPLE_COVERAGE_INVERT': gl.getParameter(gl.SAMPLE_COVERAGE_INVERT),
+        'SAMPLE_COVERAGE_VALUE': gl.getParameter(gl.SAMPLE_COVERAGE_VALUE),
+        'SAMPLES': gl.getParameter(gl.SAMPLES),
+        'SCISSOR_BOX': gl.getParameter(gl.SCISSOR_BOX),
+        'SCISSOR_TEST': gl.getParameter(gl.SCISSOR_TEST),
+        'SHADING_LANGUAGE_VERSION': gl.getParameter(gl.SHADING_LANGUAGE_VERSION),
+        'STENCIL_BACK_FAIL': gl.getParameter(gl.STENCIL_BACK_FAIL),
+        'STENCIL_BACK_FUNC': gl.getParameter(gl.STENCIL_BACK_FUNC),
+        'STENCIL_BACK_PASS_DEPTH_FAIL': gl.getParameter(gl.STENCIL_BACK_PASS_DEPTH_FAIL),
+        'STENCIL_BACK_PASS_DEPTH_PASS': gl.getParameter(gl.STENCIL_BACK_PASS_DEPTH_PASS),
+        'STENCIL_BACK_REF': gl.getParameter(gl.STENCIL_BACK_REF),
+        'STENCIL_BACK_VALUE_MASK': gl.getParameter(gl.STENCIL_BACK_VALUE_MASK),
+        'STENCIL_BACK_WRITEMASK': gl.getParameter(gl.STENCIL_BACK_WRITEMASK),
+        'STENCIL_BITS': gl.getParameter(gl.STENCIL_BITS),
+        'STENCIL_CLEAR_VALUE': gl.getParameter(gl.STENCIL_CLEAR_VALUE),
+        'STENCIL_FAIL': gl.getParameter(gl.STENCIL_FAIL),
+        'STENCIL_FUNC': gl.getParameter(gl.STENCIL_FUNC),
+        'STENCIL_PASS_DEPTH_FAIL': gl.getParameter(gl.STENCIL_PASS_DEPTH_FAIL),
+        'STENCIL_PASS_DEPTH_PASS': gl.getParameter(gl.STENCIL_PASS_DEPTH_PASS),
+        'STENCIL_REF': gl.getParameter(gl.STENCIL_REF),
+        'STENCIL_TEST': gl.getParameter(gl.STENCIL_TEST),
+        'STENCIL_VALUE_MASK': gl.getParameter(gl.STENCIL_VALUE_MASK),
+        'STENCIL_WRITEMASK': gl.getParameter(gl.STENCIL_WRITEMASK),
+        'SUBPIXEL_BITS': gl.getParameter(gl.SUBPIXEL_BITS),
+        'TEXTURE_BINDING_2D_ARRAY': gl.getParameter(gl.TEXTURE_BINDING_2D_ARRAY),
+        'TEXTURE_BINDING_3D': gl.getParameter(gl.TEXTURE_BINDING_3D),
+        'UNIFORM_BUFFER_BINDING': gl.getParameter(gl.UNIFORM_BUFFER_BINDING),
+        'UNIFORM_BUFFER_OFFSET_ALIGNMENT': gl.getParameter(gl.UNIFORM_BUFFER_OFFSET_ALIGNMENT),
+        'UNPACK_ALIGNMENT': gl.getParameter(gl.UNPACK_ALIGNMENT),
+        'UNPACK_IMAGE_HEIGHT': gl.getParameter(gl.UNPACK_IMAGE_HEIGHT),
+        'UNPACK_ROW_LENGTH': gl.getParameter(gl.UNPACK_ROW_LENGTH),
+        'UNPACK_SKIP_IMAGES': gl.getParameter(gl.UNPACK_SKIP_IMAGES),
+        'UNPACK_SKIP_PIXELS': gl.getParameter(gl.UNPACK_SKIP_PIXELS),
+        'UNPACK_SKIP_ROWS': gl.getParameter(gl.UNPACK_SKIP_ROWS),
+        'UNPACK_FLIP_Y_WEBGL': gl.getParameter(gl.UNPACK_FLIP_Y_WEBGL),
+        'UNPACK_PREMULTIPLY_ALPHA_WEBGL': gl.getParameter(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL),
+        'VERTEX_ARRAY_BINDING': gl.getParameter(gl.VERTEX_ARRAY_BINDING),
+        'VIEWPORT': gl.getParameter(gl.VIEWPORT),
+        'READ_BUFFER': gl.getParameter(gl.READ_BUFFER),
+        'DRAW_BUFFER0': gl.getParameter(gl.DRAW_BUFFER0),
+        'DRAW_BUFFER1': gl.getParameter(gl.DRAW_BUFFER1),
+        'DRAW_BUFFER2': gl.getParameter(gl.DRAW_BUFFER2),
+        'DRAW_BUFFER3': gl.getParameter(gl.DRAW_BUFFER3),
+        'DRAW_BUFFER4': gl.getParameter(gl.DRAW_BUFFER4),
+        'DRAW_BUFFER5': gl.getParameter(gl.DRAW_BUFFER5),
+        'DRAW_BUFFER6': gl.getParameter(gl.DRAW_BUFFER6),
+        'DRAW_BUFFER7': gl.getParameter(gl.DRAW_BUFFER7),
+        // 添加更多的参数...
+    };
+    let str = '';
+    Object.keys(parameters).forEach(key => {
+        const value = JSON.stringify(parameters[key]);
+        if (typeof value !== 'string') {
+            return;
+        }
+        str += `${key}:${value}}`;
+    });
+    const hash = CryptoJS.MD5(str).toString();
+    return {parameters, hash};
+}
+}
+
+      window.onload = function() {
+        const canvasFP = getCanvasFingerprint();
+        const webglFP = getGLDrawHash();
+        console.log({...canvasFP, ...webglFP});
+        const canvasImageHashDiv = document.getElementById('canvas-image-hash');
+        canvasImageHashDiv.innerText = canvasFP.hash;
+        const canvasImageValueDiv = document.getElementById('canvas-image-value');
+        canvasImageValueDiv.innerText = stringCut(canvasFP.imagesData);
+        const webglImageHashDiv = document.getElementById('webgl-image-hash');
+        webglImageHashDiv.innerText = webglFP.r;
+        const webglParametersHashDiv = document.getElementById('webgl-parameters-hash');
+        webglParametersHashDiv.innerText = webglFP.hash;
+        const webglValueDiv = document.getElementById('webgl-value');
+        webglFP.parameters && Object.keys(webglFP.parameters).map((key) => {
+          webglValueDiv.innerText += `${key}:${webglFP.parameters[key]}\n`;
+        });
+      }
+    </script>
   </body>
 </html>
