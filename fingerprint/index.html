@@ -21,6 +21,16 @@
         </div>
         <hr />
         <div>
+          <div>product:</div>
+          <div id="product"></div>
+        </div>
+        <hr />
+        <div>
+          <div>device memory:</div>
+          <div id="device-memory"></div>
+        </div>
+        <hr />
+        <div>
           <div>hardware concurrency</div>
           <div id="hardware-concurrency"></div>
         </div>
@@ -458,6 +468,16 @@ window.onload = function() {
   const maxTouchPoints = getMaxTouchPoints();
   const maxTouchPointsDiv = document.getElementById('max-touch-points');
   maxTouchPointsDiv.innerText = maxTouchPoints;
+
+  // product
+  const product = navigator.product;
+  const productDiv = document.getElementById('product');
+  productDiv.innerText = product
+
+  // device memory
+  const deviceMemory = navigator.deviceMemory;
+  const deviceMemoryDiv = document.getElementById('device-memory');
+  deviceMemoryDiv.innerText = deviceMemory
 }
     </script>
   </body>
