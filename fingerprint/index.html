@@ -26,6 +26,11 @@
         </div>
         <hr />
         <div>
+          <div>product sub:</div>
+          <div id="product-sub"></div>
+        </div>
+        <hr />
+        <div>
           <div>device memory:</div>
           <div id="device-memory"></div>
         </div>
@@ -41,8 +46,18 @@
         </div>
         <hr />
         <div>
+          <div>color depth:</div>
+          <div id="color-depth"></div>
+        </div>
+        <hr />
+        <div>
           <div>pixel ratio:</div>
           <div id="pixel-ratio"></div>
+        </div>
+        <hr />
+        <div>
+          <div>audio context:</div>
+          <div id="audio-context"></div>
         </div>
         <hr />
         <div>
@@ -406,6 +421,31 @@ const getCanvasFp2 = function (options) {
     return CryptoJS.MD5(result[1]).toString();
   }
 
+const getAudioContextFP = function () {
+  // 检查浏览器是否支持Web Audio API
+  if ('AudioContext' in window || 'webkitAudioContext' in window) {
+      // 创建一个新的AudioContext
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const info = [];
+
+      // 获取AudioContext的状态和参数
+      var sampleRate = audioContext.sampleRate;
+      info.push(sampleRate);
+      var maxChannelCount = audioContext.maxChannelCount;
+      info.push(maxChannelCount);
+      var currentTime = audioContext.currentTime;
+      info.push(currentTime);
+      var destinationChannelCount = audioContext.destination.channelCount;
+      info.push(destinationChannelCount);
+      var audioContextState = audioContext.state;
+      info.push(audioContextState);
+      console.log('Audio Context', info);
+      return CryptoJS.MD5(JSON.stringify(info)).toString();
+
+      // 在这里你可以进一步使用AudioContext进行音频操作
+  }
+  return;
+}
 window.onload = function() {
   const canvasFP = getCanvasFingerprint();
   const webglFP = getGLDrawHash();
@@ -476,10 +516,26 @@ window.onload = function() {
   const productDiv = document.getElementById('product');
   productDiv.innerText = product
 
+  // product sub
+  const productSub = navigator.productSub;
+  const productSubDiv = document.getElementById('product-sub');
+  productSubDiv.innerText = productSub;
+
   // device memory
   const deviceMemory = navigator.deviceMemory;
   const deviceMemoryDiv = document.getElementById('device-memory');
-  deviceMemoryDiv.innerText = deviceMemory
+  deviceMemoryDiv.innerText = deviceMemory;
+
+  // color depth
+  const colorDepth = window.screen.colorDepth;
+  const colorDepthDiv = document.getElementById('color-depth');
+  colorDepthDiv.innerText = colorDepth;
+
+  // audio context
+  const audioContext = getAudioContextFP();
+  const audioContextDiv = document.getElementById('audio-context');
+  audioContextDiv.innerText = audioContext;
+
 }
     </script>
   </body>
