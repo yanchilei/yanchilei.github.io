@@ -447,8 +447,10 @@ window.onload = function() {
   const height = window.screen.height;
   const availableWidth = window.screen.availWidth;
   const availableHeight = window.screen.availHeight;
+  const availableLeft = window.screen.availLeft;
+  const availableTop = window.screen.availTop;
   const screenDiv = document.getElementById('screen');
-  screenDiv.innerText = `width:${width},height:${height},availableWidth:${availableWidth},availableHeight:${availableHeight}`
+  screenDiv.innerText = `width: ${width}, height: ${height}, availableWidth: ${availableWidth}, availableHeight: ${availableHeight}, availableLeft: ${availableLeft}, availableTop: ${availableTop}`
 
   // pixel ratio
   const pixelRatio = window.devicePixelRatio;
