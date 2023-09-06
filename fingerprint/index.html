@@ -11,6 +11,36 @@
     <div>
       <div style="border: 1px solid #ccc; padding: 8px">
         <div>
+          <div>user agent:</div>
+          <div id="ua"></div>
+        </div>
+        <hr />
+        <div>
+          <div>platform:</div>
+          <div id="platform"></div>
+        </div>
+        <hr />
+        <div>
+          <div>hardware concurrency</div>
+          <div id="hardware-concurrency"></div>
+        </div>
+        <hr />
+        <div>
+          <div>screen:</div>
+          <div id="screen"></div>
+        </div>
+        <hr />
+        <div>
+          <div>pixel ratio:</div>
+          <div id="pixel-ratio"></div>
+        </div>
+        <hr />
+        <div>
+          <div>max touch points:</div>
+          <div id="max-touch-points"></div>
+        </div>
+        <hr />
+        <div>
           <div>canvas image hash:</div>
           <div id="canvas-image-hash"></div>
         </div>
@@ -366,28 +396,69 @@ const getCanvasFp2 = function (options) {
     return CryptoJS.MD5(result[1]).toString();
   }
 
-      window.onload = function() {
-        const canvasFP = getCanvasFingerprint();
-        const webglFP = getGLDrawHash();
-        console.log({...canvasFP, ...webglFP});
-        const canvasImageHashDiv = document.getElementById('canvas-image-hash');
-        canvasImageHashDiv.innerText = canvasFP.hash;
-        const canvasImageValueDiv = document.getElementById('canvas-image-value');
-        canvasImageValueDiv.innerText = stringCut(canvasFP.imagesData);
-        const webglImageHashDiv = document.getElementById('webgl-image-hash');
-        webglImageHashDiv.innerText = webglFP.r;
-        const webglParametersHashDiv = document.getElementById('webgl-parameters-hash');
-        webglParametersHashDiv.innerText = webglFP.hash;
-        const webglValueDiv = document.getElementById('webgl-value');
-        webglFP.parameters && Object.keys(webglFP.parameters).map((key) => {
-          webglValueDiv.innerText += `${key}:${webglFP.parameters[key]}\n`;
-        });
+window.onload = function() {
+  const canvasFP = getCanvasFingerprint();
+  const webglFP = getGLDrawHash();
+  console.log({...canvasFP, ...webglFP});
+  const canvasImageHashDiv = document.getElementById('canvas-image-hash');
+  canvasImageHashDiv.innerText = canvasFP.hash;
+  const canvasImageValueDiv = document.getElementById('canvas-image-value');
+  canvasImageValueDiv.innerText = stringCut(canvasFP.imagesData);
+  const webglImageHashDiv = document.getElementById('webgl-image-hash');
+  webglImageHashDiv.innerText = webglFP.r;
+  const webglParametersHashDiv = document.getElementById('webgl-parameters-hash');
+  webglParametersHashDiv.innerText = webglFP.hash;
+  const webglValueDiv = document.getElementById('webgl-value');
+  webglFP.parameters && Object.keys(webglFP.parameters).map((key) => {
+    webglValueDiv.innerText += `${key}:${webglFP.parameters[key]}\n`;
+  });
 
-        const canvasImageHash2 = getCanvasFp2();
-        const canvasImageHash2Div = document.getElementById('canvas-image-hash2');
-        canvasImageHash2Div.innerText = canvasImageHash2;
+  const canvasImageHash2 = getCanvasFp2();
+  const canvasImageHash2Div = document.getElementById('canvas-image-hash2');
+  canvasImageHash2Div.innerText = canvasImageHash2;
 
-      }
+  // user agent 
+  const ua = navigator.userAgent;
+  const uaDIv = document.getElementById('ua');
+  uaDIv.innerText = ua
+
+  // platform
+  const platform = navigator.platform;
+  const platformDiv = document.getElementById('platform');
+  platformDiv.innerText = platform
+
+  // hardware concurrency
+  const hardwareConcurrency = navigator.hardwareConcurrency;
+  const hardwareConcurrencyDiv = document.getElementById('hardware-concurrency');
+  hardwareConcurrencyDiv.innerText = hardwareConcurrency
+
+  // 分辨率&可用分辨率
+  const width = window.screen.width;
+  const height = window.screen.height;
+  const availableWidth = window.screen.availWidth;
+  const availableHeight = window.screen.availHeight;
+  const screenDiv = document.getElementById('screen');
+  screenDiv.innerText = `width:${width},height:${height},availableWidth:${availableWidth},availableHeight:${availableHeight}`
+
+  // pixel ratio
+  const pixelRatio = window.devicePixelRatio;
+  const pixelRatioDiv = document.getElementById('pixel-ratio');
+  pixelRatioDiv.innerText = pixelRatio
+
+  // touch points
+  function getMaxTouchPoints() {
+    let maxTouchPoints = 0;
+    if (typeof navigator.maxTouchPoints !== 'undefined') {
+      maxTouchPoints = navigator.maxTouchPoints
+    } else if (typeof navigator.msMaxTouchPoints !== 'undefined') {
+      maxTouchPoints = navigator.msMaxTouchPoints
+    }
+    return maxTouchPoints;
+  }
+  const maxTouchPoints = getMaxTouchPoints();
+  const maxTouchPointsDiv = document.getElementById('max-touch-points');
+  maxTouchPointsDiv.innerText = maxTouchPoints;
+}
     </script>
   </body>
 </html>
