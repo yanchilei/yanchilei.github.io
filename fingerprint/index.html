@@ -11,6 +11,11 @@
     <div>
       <div style="border: 1px solid #ccc; padding: 8px">
         <div>
+          <div>visitor id:</div>
+          <div id="visitor-id"></div>
+        </div>
+        <hr />
+        <div>
           <div>user agent:</div>
           <div id="ua"></div>
         </div>
@@ -764,7 +769,24 @@
           as: ${JSON.stringify(as)}
           isp: ${isp}
         `;
-      };
+
+        // fp
+          // Initialize the agent at application startup.
+          const fpPromise = import('https://openfpcdn.io/fingerprintjs/v4')
+            .then(FingerprintJS => FingerprintJS.load())
+
+          // Get the visitor identifier when you need it.
+          fpPromise
+            .then(fp => fp.get())
+            .then(result => {
+              // This is the visitor identifier:
+              console.log('visitor id: ', result);
+              const visitorId = result.visitorId
+              const visitorDiv = document.getElementById("visitor-id")
+              visitorDiv.innerText = visitorId
+            })
+            .catch(error => console.error(error))
+              };
     </script>
   </body>
 </html>
