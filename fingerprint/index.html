@@ -16,6 +16,11 @@
         </div>
         <hr />
         <div>
+          <div>IP Info:</div>
+          <div id="ip-info"></div>
+        </div>
+        <hr />
+        <div>
           <div>platform:</div>
           <div id="platform"></div>
         </div>
@@ -744,6 +749,21 @@
         const batteryDiv = document.getElementById("battery");
         batteryDiv.innerText = battery;
 
+        // ip
+        const ipRes = await fetch('https://api.ipify.org/?format=json');
+        const { ip } = await ipRes.json();
+
+        // ip info
+        const ipInfoRes = await fetch('https://geo.ipify.org/api/v2/country?apiKey=at_64PSQUtvj13guSg411vYEV9mrz87A&ipAddress=' + ip);
+        const ipInfo = await ipInfoRes.json();
+        const ipInfoDiv = document.getElementById("ip-info");
+        const { location, as, isp } = ipInfo;
+        ipInfoDiv.innerText = `
+          ip: ${ip}
+          location: ${JSON.stringify(location)}
+          as: ${JSON.stringify(as)}
+          isp: ${isp}
+        `;
       };
     </script>
   </body>
